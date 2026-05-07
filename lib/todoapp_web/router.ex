@@ -18,12 +18,18 @@ defmodule TodoappWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    live "/tasks", TaskLive.Index, :index
+    live "/tasks/new", TaskLive.Form, :new
+    live "/tasks/:id", TaskLive.Show, :show
+    live "/tasks/:id/edit", TaskLive.Form, :edit
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", TodoappWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", TodoappWeb do
+    pipe_through :api
+
+    resources "/tasks", TaskController, except: [:new, :edit]
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:todoapp, :dev_routes) do

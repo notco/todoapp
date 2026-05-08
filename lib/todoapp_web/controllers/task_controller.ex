@@ -3,6 +3,7 @@ defmodule TodoappWeb.TaskController do
 
   alias Todoapp.Todos
   alias Todoapp.Todos.Task
+  alias Todoapp.Helpers.FractionalIndex
 
   action_fallback TodoappWeb.FallbackController
 
@@ -38,6 +39,26 @@ defmodule TodoappWeb.TaskController do
 
     with {:ok, %Task{}} <- Todos.delete_task(task) do
       send_resp(conn, :no_content, "")
+    end
+  end
+
+  def reorder(conn, %{"id" => id} = params) do
+    task = Todos.get_task!(id)
+    prev_pos = params["prev_pos"]
+    next_pos = params["next_pos"]
+
+    case FractionalIndex.generate_position(prev_pos, next_pos) do
+      {:ok, new_pos} ->
+        task_params = %{"position" => new_pos}
+
+        with {:ok, %Task{} = task} <- Todos.update_task(task, task_params) do
+          render(conn, :show, task: task)
+        end
+
+      {:error, reason} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: reason, message: "Failed to reorder task"})
     end
   end
 end

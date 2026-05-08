@@ -18,7 +18,9 @@ defmodule Todoapp.Todos do
 
   """
   def list_tasks do
-    Repo.all(Task)
+    Task
+    |> order_by(desc: :position)
+    |> Repo.all()
   end
 
   @doc """

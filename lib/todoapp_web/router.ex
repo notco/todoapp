@@ -29,6 +29,7 @@ defmodule TodoappWeb.Router do
     pipe_through :api
 
     resources "/tasks", TaskController, except: [:new, :edit]
+    post "/tasks/:id/reorder", TaskController, :reorder
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

@@ -28,6 +28,9 @@ defmodule TodoappWeb.Router do
   scope "/api", TodoappWeb do
     pipe_through :api
 
+    # Must come before `resources` so "paginated" isn't matched as :id.
+    get "/tasks/paginated", TaskController, :paginated
+
     resources "/tasks", TaskController, except: [:new, :edit]
     post "/tasks/:id/reorder", TaskController, :reorder
   end

@@ -12,13 +12,6 @@ defmodule TodoappWeb.TaskController do
     render(conn, :index, tasks: tasks)
   end
 
-  @doc """
-  Cursor-paginated listing — `GET /api/tasks/paginated?limit=50&after=<cursor>`.
-
-  Lives next to `index/2` rather than replacing it so the existing
-  endpoint (and its LiveView caller) keep their flat-list semantics.
-  Use this one for the 1M-row scaling target.
-  """
   def paginated(conn, params) do
     opts =
       []

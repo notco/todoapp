@@ -13,6 +13,9 @@ defmodule TodoappWeb.TaskController do
   end
 
   def create(conn, %{"task" => task_params}) do
+    task_params =
+      maybe_assign_position(task_params)
+
     with {:ok, %Task{} = task} <- Todos.create_task(task_params) do
       conn
       |> put_status(:created)
@@ -59,6 +62,20 @@ defmodule TodoappWeb.TaskController do
         conn
         |> put_status(:bad_request)
         |> json(%{error: reason, message: "Failed to reorder task"})
+    end
+  end
+
+  defp maybe_assign_position(%{"position" => pos} = params)
+       when is_binary(pos) and pos != "",
+       do: params
+
+  defp maybe_assign_position(params) do
+    case FractionalIndex.generate_position(
+           Todos.max_position(),
+           nil
+         ) do
+      {:ok, new_pos} -> Map.put(params, "position", new_pos)
+      {:error, _} -> params
     end
   end
 end

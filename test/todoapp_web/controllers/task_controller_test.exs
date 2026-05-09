@@ -49,6 +49,46 @@ defmodule TodoappWeb.TaskControllerTest do
       conn = post(conn, ~p"/api/tasks", task: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
+
+    test "auto-assigns strictly increasing positions when none is provided",
+         %{conn: conn} do
+      titles =
+        for n <- 1..3 do
+          title = "#{n}"
+
+          conn
+          |> post(~p"/api/tasks",
+            task: %{title: title, description: "d", status: "pending"}
+          )
+          |> json_response(201)
+
+          title
+        end
+
+      positions_in_create_order =
+        conn
+        |> get(~p"/api/tasks")
+        |> json_response(200)
+        |> Map.fetch!("data")
+        |> Enum.sort_by(& &1["title"])
+        |> Enum.map(& &1["position"])
+
+      assert length(positions_in_create_order) == length(titles),
+             "expected all created tasks in the list response"
+
+      Enum.each(positions_in_create_order, fn p ->
+        assert is_binary(p) and p != "",
+               "expected a non-empty derived position, got #{inspect(p)}"
+
+        refute String.ends_with?(p, "0"),
+               "derived position #{inspect(p)} ends in min char"
+      end)
+
+      [p1, p2, p3] = positions_in_create_order
+
+      assert p1 < p2 and p2 < p3,
+             "expected strictly increasing positions, got #{inspect(positions_in_create_order)}"
+    end
   end
 
   describe "update task" do

@@ -103,4 +103,8 @@ defmodule Todoapp.Todos do
   def change_task(%Task{} = task, attrs \\ %{}) do
     Task.changeset(task, attrs)
   end
+
+  def max_position do
+    Repo.one(from t in Task, select: max(t.position))
+  end
 end

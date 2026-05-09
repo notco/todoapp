@@ -12,6 +12,17 @@ defmodule TodoappWeb.TaskController do
     render(conn, :index, tasks: tasks)
   end
 
+  def paginated(conn, params) do
+    opts =
+      []
+      |> maybe_put(:limit, parse_limit(params["limit"]))
+      |> maybe_put(:after, params["after"])
+
+    {tasks, next_cursor} = Todos.paginate_tasks(opts)
+
+    render(conn, :paginated, tasks: tasks, next_cursor: next_cursor)
+  end
+
   def create(conn, %{"task" => task_params}) do
     task_params =
       maybe_assign_position(task_params)
@@ -76,6 +87,18 @@ defmodule TodoappWeb.TaskController do
          ) do
       {:ok, new_pos} -> Map.put(params, "position", new_pos)
       {:error, _} -> params
+    end
+  end
+
+  defp maybe_put(opts, _key, nil), do: opts
+  defp maybe_put(opts, key, value), do: [{key, value} | opts]
+
+  defp parse_limit(nil), do: nil
+
+  defp parse_limit(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {n, ""} when n > 0 -> n
+      _ -> nil
     end
   end
 end

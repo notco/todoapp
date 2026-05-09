@@ -239,6 +239,61 @@ defmodule TodoappWeb.TaskControllerTest do
     end
   end
 
+  describe "paginated listing" do
+    test "no params returns the first page with a next_cursor when more rows exist",
+         %{conn: conn} do
+      # Default page size is 50; create 60 tasks so a follow-up page exists.
+      for n <- 1..60 do
+        post(conn, ~p"/api/tasks",
+          task: %{
+            title: "p#{String.pad_leading("#{n}", 3, "0")}",
+            description: "d",
+            status: "pending"
+          }
+        )
+      end
+
+      resp =
+        conn
+        |> get(~p"/api/tasks/paginated")
+        |> json_response(200)
+
+      assert length(resp["data"]) == 50
+      assert is_binary(resp["next_cursor"])
+
+      assert resp["next_cursor"] == List.last(resp["data"])["position"]
+    end
+
+    test "next_cursor is null when fewer rows than the limit are returned",
+         %{conn: conn} do
+      for n <- 1..3 do
+        post(conn, ~p"/api/tasks", task: %{title: "p#{n}", description: "d", status: "pending"})
+      end
+
+      resp =
+        conn
+        |> get(~p"/api/tasks/paginated?limit=10")
+        |> json_response(200)
+
+      assert length(resp["data"]) == 3
+      assert resp["next_cursor"] == nil
+    end
+
+    test "explicit limit is respected", %{conn: conn} do
+      for n <- 1..5 do
+        post(conn, ~p"/api/tasks", task: %{title: "p#{n}", description: "d", status: "pending"})
+      end
+
+      resp =
+        conn
+        |> get(~p"/api/tasks/paginated?limit=2")
+        |> json_response(200)
+
+      assert length(resp["data"]) == 2
+      assert is_binary(resp["next_cursor"])
+    end
+  end
+
   defp create_task(_) do
     task = task_fixture()
 
